@@ -3,6 +3,8 @@
 Install the necessary modules
 
     npm install
+
+Make sure Redis cache is running
   
 Run the server (defaults to port 4000)
 

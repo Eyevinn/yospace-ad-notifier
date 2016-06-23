@@ -11,6 +11,7 @@
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
+    "express-redis-cache": "^0.3.0",
     "uid-safe": "^2.1.1",
     "xhr2": "^0.1.3"
   }

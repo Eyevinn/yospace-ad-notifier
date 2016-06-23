@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var cache = require('express-redis-cache')();
 
 var tsparser = require('./lib/tsparser');
 var hlsid3 = require('./lib/hlsid3')({
@@ -14,7 +15,7 @@ var subscribers = {};
 
 SOURCES.forEach(function(s) {
   var listener = new Listener(s);
-  hlsid3.addHLSListener(listener.id, s, listener.cbobj);  
+  hlsid3.addHLSListener(listener.id, s, listener.adStart, listener.adStop);  
   listeners[listener.id] = listener;
 });
 
@@ -49,8 +50,9 @@ router.get("/feeds", function(req, res) {
 // Subscribe to a specific feed. Will return an endpoint to poll
 router.post("/subscribe/:id", function(req, res) {
   var listenerid = req.params.id;
-  var sub = new Subscriber(listeners[listenerid], hlsid3);
+  var sub = new Subscriber(listeners[listenerid], hlsid3, cache);
   var sessionid = sub.initiateSession();
+  listeners[listenerid].addSubscriber(sub);
   subscribers[sessionid] = sub;
   var jsonresponse = {
     firstPTS: sub.firstPTS,
@@ -63,11 +65,23 @@ router.post("/subscribe/:id", function(req, res) {
   return res.json(jsonresponse);
 });
 
-router.get("/subscribe/:listener_id/session/:session_id", function(req, res) {
+// Use Redis cache on this endpoint as it will be frequently accessed
+router.get("/subscribe/:listener_id/session/:session_id", function(req, res, next) {
   var sessionid = req.params.session_id;
-  var sub = subscribers[sessionid];
-  // Fix some smart caching directives here so we can use a memcache such as Varnish etc
-  return res.json(sub.nextAd());
+  cache.get(sessionid, function(error, entries) {
+    if(entries.length > 0) {
+      res.send(entries[0].body);
+      next();
+    } else {
+      var sub = subscribers[sessionid];
+      var nextad = sub.nextAd();
+      const conf = { expire: 20*60, type: 'json' };
+      cache.add(sessionid, JSON.stringify(nextad), conf, function(error, added) {
+        res.json(nextad);
+        next();
+      });
+    }
+  });  
 });
 
 app.use('/api', router);
