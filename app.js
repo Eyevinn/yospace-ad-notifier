@@ -15,7 +15,7 @@ var subscribers = {};
 
 SOURCES.forEach(function(s) {
   var listener = new Listener(s);
-  hlsid3.addHLSListener(listener.id, s, listener.adStart, listener.adStop);  
+  hlsid3.addHLSListener(listener.id, s, listener.cbobj.adStartCb, listener.cbobj.adStopCb);  
   listeners[listener.id] = listener;
 });
 
@@ -70,7 +70,8 @@ router.get("/subscribe/:listener_id/session/:session_id", function(req, res, nex
   var sessionid = req.params.session_id;
   cache.get(sessionid, function(error, entries) {
     if(entries.length > 0) {
-      res.send(entries[0].body);
+      console.log("Cache hit");
+      res.json(JSON.parse(entries[0].body));
       next();
     } else {
       var sub = subscribers[sessionid];
