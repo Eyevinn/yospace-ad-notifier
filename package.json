@@ -1,0 +1,14 @@
+{
+  "name": "yospace-ad-notifier",
+  "version": "1.0.0",
+  "description": "POC of an ad notifier to use with Yospace dai streams",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "xhr2": "^0.1.3"
+  }
+}
