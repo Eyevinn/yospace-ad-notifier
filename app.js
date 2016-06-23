@@ -28,6 +28,8 @@ var router = express.Router();
 
 router.use(function(req, res, next) {
   console.log('Handling request');
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
 
