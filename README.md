@@ -36,3 +36,68 @@ Response
 Response
 
     {"sessionFirstGlobalPTS":209.96266666666668,"start":{},"stop":{}}
+
+
+# Reference client implementation
+
+´´´
+
+initiateSession(manifesturi, 60, function(session) {
+  var cbobj = {
+    adStartCb: function(t) {
+      console.log("Detected ad break at: " + t + ", current=" + player.currentTime);
+      adBreakStart = t;
+      adBreakStop = null;
+    },
+    adStopCb: function(t) {
+      console.log("Detected ad break stop at: " + t + ", current=" + player.currentTime);
+      adBreakStart = null;
+      adBreakStop = t;
+    }
+  };
+
+  var notifier = {
+    adStart: { Cb: cbobj.adStartCb, fired: false },
+    adStop: { Cb: cbobj.adStopCb, fired: false }
+  };
+  var timer = setInterval(function() {
+    poll('http://ad-notifier.example.com' + session.nextadbreak.uri, function(data) {
+      if (data.stop && (typeof data.stop.PTS != "undefined" && data.stop.PTS != -1)) {
+        if (!notifier.adStop.fired) {
+          notifier.adStop.Cb(Math.max(data.stop.PTS, 0));
+          notifier.adStop.fired = true;
+          notifier.adStart.fired = false;
+        }
+      } else if (data.start && (typeof data.start.PTS != "undefined" && data.start.PTS != -1)) {
+        if (!notifier.adStart.fired) {
+          notifier.adStart.Cb(Math.max(data.start.PTS, 0));
+          notifier.adStart.fired = true;
+          notifier.adStop.fired = false;
+        }
+      }
+    });
+  }, 5000);
+
+  player.src = manifesturi;
+  player.play();
+});
+
+
+function initiateSession(manifesturi, skew, done) {
+  var streamid = _getStreamID(manifesturi);
+  var xhr = new XMLHttpRequest();
+  xhr.responseType = 'json';
+  xhr.onloadend = function(event) {
+    var xhr = event.target, status = xhr.status;
+    if (status >= 200 && status < 300) {
+      done(xhr.response);
+    }
+  };
+  var sessionuri = 'http://ad-notifier.example.com/api/subscribe/' + streamid;
+  xhr.open('POST', sessionuri, true);
+  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhr.send(JSON.stringify({ skew: skew }));
+}
+
+
+´´´
