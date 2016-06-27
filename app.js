@@ -1,6 +1,12 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-var cache = require('express-redis-cache')({client: require('redis').createClient(process.env.REDIS_URL) });
+var cache = null;
+
+if (process.env.USE_REDIS_CACHE === 'true') {
+  cache = require('express-redis-cache')({client: require('redis').createClient(process.env.REDIS_URL) });
+} else {
+  console.warn("CACHE DISABLED!");
+}
 
 var tsparser = require('./lib/tsparser');
 var hlsid3 = require('./lib/hlsid3')({
@@ -77,21 +83,28 @@ router.post("/subscribe/:id", function(req, res) {
 // Use Redis cache on this endpoint as it will be frequently accessed
 router.get("/subscribe/:listener_id/session/:session_id", function(req, res, next) {
   var sessionid = req.params.session_id;
-  cache.get(sessionid, function(error, entries) {
-    if(entries.length > 0) {
-      console.log("Cache hit");
-      res.json(JSON.parse(entries[0].body));
-      next();
-    } else {
-      var sub = subscribers[sessionid];
-      var nextad = sub.nextAd();
-      const conf = { expire: 20*60, type: 'json' };
-      cache.add(sessionid, JSON.stringify(nextad), conf, function(error, added) {
-        res.json(nextad);
+  if (cache) {
+    cache.get(sessionid, function(error, entries) {
+      if(entries.length > 0) {
+        console.log("Cache hit");
+        res.json(JSON.parse(entries[0].body));
         next();
-      });
-    }
-  });  
+      } else {
+        var sub = subscribers[sessionid];
+        var nextad = sub.nextAd();
+        const conf = { expire: 20*60, type: 'json' };
+        cache.add(sessionid, JSON.stringify(nextad), conf, function(error, added) {
+          res.json(nextad);
+          next();
+        });
+      }
+    });
+  } else {
+    var sub = subscribers[sessionid];
+    var nextad = sub.nextAd();
+    res.json(nextad);
+    next();
+  }  
 });
 
 app.use('/api', router);
