@@ -52,7 +52,14 @@ router.get("/feeds", function(req, res) {
 // Subscribe to a specific feed. Will return an endpoint to poll
 router.post("/subscribe/:id", function(req, res) {
   var listenerid = req.params.id;
-  var sub = new Subscriber(listeners[listenerid], hlsid3, cache);
+  var skew = 30; // time between playlist end and player head
+  console.log(req.body);
+  if (req.body) {
+    if (req.body.skew) {
+      skew = req.body.skew;
+    }
+  }
+  var sub = new Subscriber(listeners[listenerid], skew, hlsid3, cache);
   var sessionid = sub.initiateSession();
   listeners[listenerid].addSubscriber(sub);
   subscribers[sessionid] = sub;
