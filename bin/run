@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+var debug = require('debug')('yospace-ad-notifier');
+var app = require('../app');
+
+app.set('port', process.env.PORT || 4000);
+
+var server = app.listen(app.get('port'), function() {
+  debug("Listening for subscribers on port %s...", server.address().port);
+});

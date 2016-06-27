@@ -1,6 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-var cache = require('express-redis-cache')();
+var cache = require('express-redis-cache')({client: require('redis').createClient(process.env.REDIS_URL) });
 
 var tsparser = require('./lib/tsparser');
 var hlsid3 = require('./lib/hlsid3')({
@@ -95,6 +95,4 @@ router.get("/subscribe/:listener_id/session/:session_id", function(req, res, nex
 });
 
 app.use('/api', router);
-var server = app.listen(4000, function() {
-  console.log("Listening for subscribers on port %s...", server.address().port);
-});
+module.exports = app;
