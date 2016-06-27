@@ -40,7 +40,7 @@ Response
 
 # Reference client implementation
 
-´´´
+```
 
 initiateSession(manifesturi, 60, function(session) {
   var cbobj = {
@@ -100,4 +100,4 @@ function initiateSession(manifesturi, skew, done) {
 }
 
 
-´´´
+```
