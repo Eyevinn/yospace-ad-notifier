@@ -99,5 +99,18 @@ function initiateSession(manifesturi, skew, done) {
   xhr.send(JSON.stringify({ skew: skew }));
 }
 
+function poll(uri, done) {
+  var xhr = new XMLHttpRequest();
+  xhr.responseType = 'json';
+  xhr.onloadend = function(event) {
+    var xhr = event.target, status = xhr.status;
+    if (status >= 200 && status < 300) {
+      done(xhr.response);
+    }
+  };
+  xhr.open('GET', uri, true);
+  xhr.send();
+}
+
 
 ```
