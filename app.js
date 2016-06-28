@@ -58,14 +58,13 @@ router.get("/feeds", function(req, res) {
 // Subscribe to a specific feed. Will return an endpoint to poll
 router.post("/subscribe/:id", function(req, res) {
   var listenerid = req.params.id;
-  var skew = 30; // time between playlist end and player head
-  console.log(req.body);
+  var firstsegmenturi = null;
   if (req.body) {
-    if (req.body.skew) {
-      skew = req.body.skew;
+    if (req.body.firstsegment && req.body.firstsegment.uri) {
+      firstsegmenturi = req.body.firstsegment.uri;
     }
   }
-  var sub = new Subscriber(listeners[listenerid], skew, hlsid3, cache);
+  var sub = new Subscriber(listeners[listenerid], firstsegmenturi, hlsid3, cache);
   var sessionid = sub.initiateSession();
   listeners[listenerid].addSubscriber(sub);
   subscribers[sessionid] = sub;

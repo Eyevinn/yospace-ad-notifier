@@ -25,6 +25,10 @@ Obtain an endpoint to subscribe to
 
     curl -X POST http://localhost:4000/api/subscribe/119101367
 
+with the following body
+
+    { firstsegment: { uri: "URI to first segment in the HLS manifest when playback started" } }
+
 Response
 
     {"firstPTS":209.96266666666668,"sessionid":"b0UDmqns9WcVAAs6eNAP6fZx","nextadbreak":{"uri":"/api/subscribe/119101367/session/b0UDmqns9WcVAAs6eNAP6fZx","method":"GET"}}
@@ -40,7 +44,7 @@ Response
 
 # Reference client implementation
 
-```
+```javascript
 
 initiateSession(manifesturi, 60, function(session) {
   var cbobj = {
@@ -83,20 +87,22 @@ initiateSession(manifesturi, 60, function(session) {
 });
 
 
-function initiateSession(manifesturi, skew, done) {
+function initiateSession(manifesturi, done) {
   var streamid = _getStreamID(manifesturi);
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'json';
-  xhr.onloadend = function(event) {
-    var xhr = event.target, status = xhr.status;
-    if (status >= 200 && status < 300) {
-      done(xhr.response);
-    }
-  };
-  var sessionuri = 'http://ad-notifier.example.com/api/subscribe/' + streamid;
-  xhr.open('POST', sessionuri, true);
-  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhr.send(JSON.stringify({ skew: skew }));
+  _getFirstSegment(manifesturi, function(segment) {
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.onloadend = function(event) {
+      var xhr = event.target, status = xhr.status;
+      if (status >= 200 && status < 300) {
+        done(xhr.response);
+      }
+    };
+    var sessionuri = 'http://ad-notifier.example.com/api/subscribe/' + streamid;
+    xhr.open('POST', sessionuri, true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.send(JSON.stringify({ firstsegment: {uri: segment.uri} }));
+  });
 }
 
 function poll(uri, done) {
@@ -111,6 +117,7 @@ function poll(uri, done) {
   xhr.open('GET', uri, true);
   xhr.send();
 }
+
 
 
 ```
