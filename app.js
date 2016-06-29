@@ -82,6 +82,11 @@ router.post("/subscribe/:id", function(req, res) {
 // Use Redis cache on this endpoint as it will be frequently accessed
 router.get("/subscribe/:listener_id/session/:session_id", function(req, res, next) {
   var sessionid = req.params.session_id;
+  var sub = subscribers[sessionid];
+  if (!sub) {
+      res.status(404).send('Session not found');
+      next();
+  }
   if (cache) {
     cache.get(sessionid, function(error, entries) {
       if(entries.length > 0) {
@@ -89,7 +94,7 @@ router.get("/subscribe/:listener_id/session/:session_id", function(req, res, nex
         res.json(JSON.parse(entries[0].body));
         next();
       } else {
-        var sub = subscribers[sessionid];
+        sub = subscribers[sessionid];
         var nextad = sub.nextAd();
         const conf = { expire: 20*60, type: 'json' };
         cache.add(sessionid, JSON.stringify(nextad), conf, function(error, added) {
@@ -99,7 +104,6 @@ router.get("/subscribe/:listener_id/session/:session_id", function(req, res, nex
       }
     });
   } else {
-    var sub = subscribers[sessionid];
     var nextad = sub.nextAd();
     res.json(nextad);
     next();
