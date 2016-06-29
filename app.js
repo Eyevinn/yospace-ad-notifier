@@ -86,28 +86,29 @@ router.get("/subscribe/:listener_id/session/:session_id", function(req, res, nex
   if (!sub) {
       res.status(404).send('Session not found');
       next();
-  }
-  if (cache) {
-    cache.get(sessionid, function(error, entries) {
-      if(entries.length > 0) {
-        console.log("Cache hit");
-        res.json(JSON.parse(entries[0].body));
-        next();
-      } else {
-        sub = subscribers[sessionid];
-        var nextad = sub.nextAd();
-        const conf = { expire: 20*60, type: 'json' };
-        cache.add(sessionid, JSON.stringify(nextad), conf, function(error, added) {
-          res.json(nextad);
-          next();
-        });
-      }
-    });
   } else {
-    var nextad = sub.nextAd();
-    res.json(nextad);
-    next();
-  }  
+    if (cache) {
+      cache.get(sessionid, function(error, entries) {
+        if(entries.length > 0) {
+          console.log("Cache hit");
+          res.json(JSON.parse(entries[0].body));
+          next();
+        } else {
+          sub = subscribers[sessionid];
+          var nextad = sub.nextAd();
+          const conf = { expire: 20*60, type: 'json' };
+          cache.add(sessionid, JSON.stringify(nextad), conf, function(error, added) {
+            res.json(nextad);
+            next();
+          });
+        }
+      });
+    } else {
+      var nextad = sub.nextAd();
+      res.json(nextad);
+      next();
+    }
+  }   
 });
 
 app.use('/api', router);
