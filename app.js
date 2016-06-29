@@ -85,6 +85,7 @@ router.get("/subscribe/:listener_id/session/:session_id", function(req, res, nex
   var sub = subscribers[sessionid];
   if (!sub) {
       res.status(404).send('Session not found');
+      console.warn("Stale session " + sessionid);
       next();
   } else {
     if (cache) {
